@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>積木堆疊大師</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
+        h1 { color: #333; }
+        select { width: 100%; padding: 15px; font-size: 18px; margin: 20px 0; border-radius: 10px; }
+        button { width: 100%; padding: 15px; font-size: 20px; background-color: #4CAF50; color: white; border: none; border-radius: 10px; cursor: pointer; }
+        button:active { background-color: #45a049; }
+        #status { margin-top: 20px; color: #666; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>🏗️ 積木堆疊控制台</h1>
+    
+    <label for="shape-select">請選擇要蓋的形狀：</label>
+    <select id="shape-select">
+        <option value="pyramid">🔺 小金字塔 (3層)</option>
+        <option value="wall">🧱 城牆 (2x3)</option>
+        <option value="tower">🗼 高塔 (單柱)</option>
+        <option value="stairs">🪜 階梯</option>
+    </select>
+
+    <button onclick="startBuild()">🚀 開始建造</button>
+
+    <div id="status">準備就緒...</div>
+
+    <script>
+        function startBuild() {
+            const shape = document.getElementById('shape-select').value;
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.innerText = "⏳ 指令傳送中...";
+            statusDiv.style.color = "blue";
+
+            fetch('/start_build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shape_name: shape })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    statusDiv.innerText = "✅ 收到指令！手臂開始工作中...";
+                    statusDiv.style.color = "green";
+                } else {
+                    statusDiv.innerText = "❌ 錯誤：" + data.message;
+                    statusDiv.style.color = "red";
+                }
+            })
+            .catch(error => {
+                statusDiv.innerText = "❌ 連線失敗！請檢查樹莓派";
+                statusDiv.style.color = "red";
+            });
+        }
+    </script>
+
+</body>
+</html>
