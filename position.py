@@ -6,68 +6,63 @@ import pigpio
 import time
 
 # ==========================================
-# 1. 您的專屬設定 (依照您的要求)
+# 1. 硬體參數 (使用您的黃金四角)
 # ==========================================
-
-# GPIO 腳位 (請確認是否與 config.py 一致)
 PIN_GRIPPER  = 18
 PIN_ELBOW    = 12
 PIN_BASE     = 19
 PIN_SHOULDER = 13
 
-# 夾爪設定 (1=開, 2=關)
-GRIPPER_OPEN_PWM  = 1600  # 1: 開
-GRIPPER_CLOSE_PWM = 2350  # 2: 關
+# 夾爪設定
+GRIPPER_OPEN  = 1600
+GRIPPER_CLOSE = 2350
 
-# 初始位置 (開機時的狀態)
+# 初始位置 (開機時預設的位置)
 current_pos = {
-    'base': 1500,      # 中間
-    'shoulder': 1500,  # 起點
-    'elbow': 1550,     # 中間
-    'gripper': GRIPPER_OPEN_PWM
+    'base': 1500,
+    'shoulder': 1500,
+    'elbow': 1550,
+    'gripper': 1600
 }
 
-# 微調步伐 (按一下加減多少)
+# 腳位對照表
+PINS = {
+    'base': PIN_BASE,
+    'shoulder': PIN_SHOULDER,
+    'elbow': PIN_ELBOW,
+    'gripper': PIN_GRIPPER
+}
+
+# 移動步距 (按一下動多少)
 STEP = 20
 
 # ==========================================
-# 2. 系統連線
+# 2. 系統連線與軟啟動
 # ==========================================
 pi = pigpio.pi()
 if not pi.connected:
-    print("❌ 錯誤：pigpiod 沒開！請執行 sudo systemctl start pigpiod")
+    print("❌ 錯誤：pigpiod 沒開！(sudo systemctl start pigpiod)")
     exit()
 
 def set_servo(pin, val):
     pi.set_servo_pulsewidth(pin, val)
 
-# 讓所有馬達歸位
-# 讓所有馬達歸位 (改良版：排隊啟動)
-print("正在歸位 (一顆一顆來)...")
+print("🚀 系統啟動中... (執行軟啟動以保護電池)")
 
-# 定義啟動順序 (建議：底座 -> 手臂 -> 夾爪)
-# 這樣可以避免手臂還沒站穩就亂動
-startup_order = ['base', 'shoulder', 'elbow', 'gripper']
+# 依序啟動馬達，避免電流瞬間過載
+startup_sequence = ['base', 'shoulder', 'elbow', 'gripper']
 
-for name in startup_order:
-    pin = 0
-    if name == 'base': pin = PIN_BASE
-    elif name == 'shoulder': pin = PIN_SHOULDER
-    elif name == 'elbow': pin = PIN_ELBOW
-    elif name == 'gripper': pin = PIN_GRIPPER
-    
+for name in startup_sequence:
+    pin = PINS[name]
     val = current_pos[name]
-    
     print(f"   -> 啟動 {name}...")
     set_servo(pin, val)
-    
-    # 【關鍵】每啟動一顆，休息 0.5 秒，讓電壓回穩
-    time.sleep(0.5) 
+    time.sleep(0.5) # 關鍵：每顆馬達間隔 0.5 秒
 
-print("✅ 歸位完成，系統穩定！")
+print("✅ 啟動完成，系統穩定！")
 
 # ==========================================
-# 3. 按鍵讀取函式 (不用按 Enter)
+# 3. 按鍵讀取
 # ==========================================
 def get_key():
     fd = sys.stdin.fileno()
@@ -84,94 +79,64 @@ def get_key():
     return key
 
 # ==========================================
-# 4. 主畫面與操作說明
+# 4. 主程式
 # ==========================================
-print("\n" * 50) # 清空畫面
+print("\n" * 50)
 print("==============================================")
-print("      🎯 機械手臂 定位尋找器 (Position Finder)")
+print("      🎯 位置尋找器 v2 (防抖動版)")
 print("==============================================")
-print("【肩 Shoulder】(1500~1700)")
-print("   [A] +20 (往上/後)   [Z] -20 (往下/前)")
-print("   [Q] 一鍵到 1700     [E] 一鍵回 1500")
+print("【肩 Shoulder】 [A] +20 (上/後)   [Z] -20 (下/前)")
+print("【肘 Elbow】    [S] +20 (前/下)   [X] -20 (後/中)")
+print("【底 Base】     [D] +20 (左)      [C] -20 (右)")
+print("【夾 Gripper】  [1] 開            [2] 關")
 print("----------------------------------------------")
-print("【肘 Elbow】(1550~1900)")
-print("   [S] +20 (往前/下)   [X] -20 (往後/中)")
-print("   [W] 一鍵到 1900     [R] 一鍵回 1550")
-print("----------------------------------------------")
-print("【底 Base】")
-print("   [D] +20 (左)        [C] -20 (右)")
-print("   [F] 一鍵回中 (1500)")
-print("----------------------------------------------")
-print("【夾 Gripper】")
-print("   [1] 開 (Open)       [2] 關 (Close)")
-print("----------------------------------------------")
-print(" [P] 顯示目前座標 (請抄下來！)")
-print(" [L] 離開程式")
+print(" [P] 印出數據 (Print Config)")
+print(" [L] 離開 (Leave)")
 print("==============================================")
 
 try:
     while True:
         key = get_key().lower()
         
-        if key == '': continue
+        # 如果沒按鍵，就稍微休息，避免佔用 CPU 和過度發送訊號
+        if key == '': 
+            time.sleep(0.05)
+            continue
 
-        # --- Shoulder (肩膀) 控制 ---
-        if key == 'a': 
-            current_pos['shoulder'] += STEP
-        elif key == 'z': 
-            current_pos['shoulder'] -= STEP
-        elif key == 'q': # 一鍵最大
-            current_pos['shoulder'] = 1700
-        elif key == 'e': # 一鍵回中
-            current_pos['shoulder'] = 1500
+        # --- Shoulder ---
+        if key == 'a': current_pos['shoulder'] += STEP
+        elif key == 'z': current_pos['shoulder'] -= STEP
             
-        # --- Elbow (手肘) 控制 ---
-        elif key == 's': 
-            current_pos['elbow'] += STEP
-        elif key == 'x': 
-            current_pos['elbow'] -= STEP
-        elif key == 'w': # 一鍵最大
-            current_pos['elbow'] = 1900
-        elif key == 'r': # 一鍵回中
-            current_pos['elbow'] = 1550
+        # --- Elbow ---
+        elif key == 's': current_pos['elbow'] += STEP
+        elif key == 'x': current_pos['elbow'] -= STEP
 
-        # --- Base (底座) 控制 ---
-        elif key == 'd': 
-            current_pos['base'] += STEP
-        elif key == 'c': 
-            current_pos['base'] -= STEP
-        elif key == 'f': # 一鍵回中
-            current_pos['base'] = 1500
+        # --- Base ---
+        elif key == 'd': current_pos['base'] += STEP
+        elif key == 'c': current_pos['base'] -= STEP
 
-        # --- Gripper (夾爪) 控制 ---
+        # --- Gripper ---
         elif key == '1': 
-            current_pos['gripper'] = GRIPPER_OPEN_PWM
+            current_pos['gripper'] = GRIPPER_OPEN
             print("\n🖐 夾爪: 開")
         elif key == '2': 
-            current_pos['gripper'] = GRIPPER_CLOSE_PWM
+            current_pos['gripper'] = GRIPPER_CLOSE
             print("\n✊ 夾爪: 關")
 
-        # --- 顯示數據 ---
+        # --- 功能鍵 ---
         elif key == 'p':
-            print(f"\n📝 請記錄: BASE={current_pos['base']}, SHOULDER={current_pos['shoulder']}, ELBOW={current_pos['elbow']}")
-            continue # 跳過移動指令，直接下一輪
+            print(f"\n📝 記錄點: {current_pos}")
+            continue # 跳過移動指令
 
-        # --- 離開 ---
         elif key == 'l':
             break
 
-        # --- 限制範圍 (安全鎖) ---
-        # Shoulder: 1500 ~ 1700
-        if current_pos['shoulder'] > 1700: current_pos['shoulder'] = 1700
-        if current_pos['shoulder'] < 1500: current_pos['shoulder'] = 1500
-        
-        # Elbow: 1550 ~ 1900
-        if current_pos['elbow'] > 1900: current_pos['elbow'] = 1900
-        if current_pos['elbow'] < 1550: current_pos['elbow'] = 1550
-        
-        # Base: 900 ~ 2100 (通用範圍)
-        if current_pos['base'] > 2100: current_pos['base'] = 2100
-        if current_pos['base'] < 900: current_pos['base'] = 900
+        # --- 安全限制 (防止撞壞) ---
+        # 這裡的範圍設得比較寬，讓你可以測試極限
+        # 但請隨時準備拔電源！
+        for name in ['shoulder', 'elbow', 'base']:
+            if current_pos[name] > 2450: current_pos[name] = 2450
+            if current_pos[name] < 550: current_pos[name] = 550
 
         # --- 執行移動 ---
         set_servo(PIN_SHOULDER, current_pos['shoulder'])
@@ -179,17 +144,24 @@ try:
         set_servo(PIN_BASE,     current_pos['base'])
         set_servo(PIN_GRIPPER,  current_pos['gripper'])
         
-        # 即時顯示數值
+        # 即時顯示
         print(f"\r S:{current_pos['shoulder']}  E:{current_pos['elbow']}  B:{current_pos['base']}   ", end="")
         
-        time.sleep(0.05) # 稍微延遲避免太快
+        # 【關鍵防抖】強制休息 0.1 秒
+        # 這能確保馬達有時間反應，不會因指令堆積而發抖
+        time.sleep(0.1)
 
 except KeyboardInterrupt:
     pass
 finally:
-    print("\n程式結束，放鬆馬達...")
-    set_servo(PIN_SHOULDER, 0)
-    set_servo(PIN_ELBOW, 0)
+    print("\n程式結束。")
+    # 這裡可以選擇是否要放鬆
+    # 如果怕手臂砸下來，可以把下面這行註解掉
+    
+    # 選擇性放鬆：只放鬆底座和夾爪，手臂保持出力
     set_servo(PIN_BASE, 0)
     set_servo(PIN_GRIPPER, 0)
+    # set_servo(PIN_SHOULDER, 0) # 為了安全，這兩顆不放鬆
+    # set_servo(PIN_ELBOW, 0)
+    
     pi.stop()
