@@ -42,14 +42,29 @@ def set_servo(pin, val):
     pi.set_servo_pulsewidth(pin, val)
 
 # 讓所有馬達歸位
-print("正在歸位...")
-for pin_name, val in current_pos.items():
-    if pin_name == 'base': pin = PIN_BASE
-    elif pin_name == 'shoulder': pin = PIN_SHOULDER
-    elif pin_name == 'elbow': pin = PIN_ELBOW
-    elif pin_name == 'gripper': pin = PIN_GRIPPER
+# 讓所有馬達歸位 (改良版：排隊啟動)
+print("正在歸位 (一顆一顆來)...")
+
+# 定義啟動順序 (建議：底座 -> 手臂 -> 夾爪)
+# 這樣可以避免手臂還沒站穩就亂動
+startup_order = ['base', 'shoulder', 'elbow', 'gripper']
+
+for name in startup_order:
+    pin = 0
+    if name == 'base': pin = PIN_BASE
+    elif name == 'shoulder': pin = PIN_SHOULDER
+    elif name == 'elbow': pin = PIN_ELBOW
+    elif name == 'gripper': pin = PIN_GRIPPER
+    
+    val = current_pos[name]
+    
+    print(f"   -> 啟動 {name}...")
     set_servo(pin, val)
-time.sleep(0.5)
+    
+    # 【關鍵】每啟動一顆，休息 0.5 秒，讓電壓回穩
+    time.sleep(0.5) 
+
+print("✅ 歸位完成，系統穩定！")
 
 # ==========================================
 # 3. 按鍵讀取函式 (不用按 Enter)
