@@ -156,10 +156,4 @@ python3 app.py
 3.  **MeArm Robot Arm Open Source Project**: [https://shop.mearm.com/](https://shop.mearm.com/) (Mechanical structure reference)
 4.  **pigpio Python Library**: [http://abyz.me.uk/rpi/pigpio/python.html](http://abyz.me.uk/rpi/pigpio/python.html) (PWM control implementation)
 
------
 
-### 💡 提醒：
-
-1.  **影片很重要**：作業要求 "You should also include video demos"，所以請務必錄一段手臂成功疊起兩個積木的影片（或是測試前後左右移動的影片）。
-2.  **程式碼來源**：我在 References 裡幫您列出了老師給的範例連結，這樣符合 "YOU MUST INCLUDE REFERENCES" 的要求。
-3.  **照片**：記得補上電路圖照片，就算是用手機拍麵包板也可以。
