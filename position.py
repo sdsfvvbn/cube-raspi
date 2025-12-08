@@ -14,7 +14,7 @@ PIN_BASE     = 19
 PIN_SHOULDER = 13
 
 # 夾爪設定
-GRIPPER_OPEN  = 1600
+GRIPPER_OPEN  = 1450
 GRIPPER_CLOSE = 2350
 
 # 初始位置 (開機時預設的位置)
@@ -22,7 +22,7 @@ current_pos = {
     'base': 1500,
     'shoulder': 1500,
     'elbow': 1550,
-    'gripper': 1600
+    'gripper': 1450
 }
 
 # 腳位對照表
@@ -164,4 +164,5 @@ finally:
     # set_servo(PIN_SHOULDER, 0) # 為了安全，這兩顆不放鬆
     # set_servo(PIN_ELBOW, 0)
     
+
     pi.stop()
