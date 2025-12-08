@@ -11,11 +11,11 @@ try:
     bot = MeArm()
     print("✅ 機械手臂連線成功！")
 except:
-    print("⚠️ 手臂未連線 (如果是測試網頁可以忽略)")
+    print("⚠️ 手臂未連線")
     bot = None
 
 # --- 設定區 ---
-FEEDER_POS = [0, 180, 20]  # 取料點座標 [x, y, z] (請修改為您的真實位置)
+FEEDER_POS = [0, 165, 25]  # 取料點座標 [x, y, z] 
 SAFE_HEIGHT = 100          # 移動時的安全高度 (避免撞倒積木)
 
 def move_block(target_x, target_y, target_z):
@@ -72,4 +72,5 @@ def start_build():
 
 if __name__ == '__main__':
     # 啟動 Web Server，允許區網連線
+
     app.run(host='0.0.0.0', port=5000, debug=True)
