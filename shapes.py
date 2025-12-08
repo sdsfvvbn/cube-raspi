@@ -1,7 +1,7 @@
 # shapes.py
 
 # 積木尺寸 (mm)
-BLOCK_SIZE = 25 
+BLOCK_SIZE = 20
 # 堆疊的高度層 (Z軸) -> 第一層是 10mm (或是底板高度), 第二層是 10+25...
 LAYER_H = [10, 10 + BLOCK_SIZE, 10 + BLOCK_SIZE*2, 10 + BLOCK_SIZE*3]
 
@@ -53,5 +53,6 @@ def get_coords(name):
         {'x': ORIGIN_X,      'y': ORIGIN_Y,      'z': LAYER_H[1]}, # 第2階疊在第2個位置
         {'x': ORIGIN_X + 30, 'y': ORIGIN_Y + 30, 'z': LAYER_H[0]}, # 這裡只是示範，您可以自己設計
     ]
+
 
     return shapes.get(name, [])
