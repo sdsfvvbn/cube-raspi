@@ -3,58 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>積木堆疊大師</title>
+    <title>MeArm 控制中心</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
         h1 { color: #333; }
-        select { width: 100%; padding: 15px; font-size: 18px; margin: 20px 0; border-radius: 10px; }
-        button { width: 100%; padding: 15px; font-size: 20px; background-color: #4CAF50; color: white; border: none; border-radius: 10px; cursor: pointer; }
-        button:active { background-color: #45a049; }
-        #status { margin-top: 20px; color: #666; font-weight: bold; }
+        .btn {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 20px 40px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 24px;
+            margin: 20px 2px;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: 0 4px #999;
+        }
+        .btn:active {
+            background-color: #3e8e41;
+            box-shadow: 0 2px #666;
+            transform: translateY(2px);
+        }
+        #status { margin-top: 20px; font-weight: bold; color: #555; }
     </style>
 </head>
 <body>
 
-    <h1>🏗️ 積木堆疊控制台</h1>
-    
-    <label for="shape-select">請選擇要蓋的形狀：</label>
-    <select id="shape-select">
-        <option value="pyramid">🔺 小金字塔 (3層)</option>
-        <option value="wall">🧱 城牆 (2x3)</option>
-        <option value="tower">🗼 高塔 (單柱)</option>
-        <option value="stairs">🪜 階梯</option>
-    </select>
+    <h1>🧱 MeArm 積木自動堆疊</h1>
+    <p>目前的模式：單一積木堆疊 (Hardcoded)</p>
 
-    <button onclick="startBuild()">🚀 開始建造</button>
+    <button class="btn" onclick="startStacking()">開始堆疊 (Start)</button>
 
-    <div id="status">準備就緒...</div>
+    <div id="status">等待指令...</div>
 
     <script>
-        function startBuild() {
-            const shape = document.getElementById('shape-select').value;
-            const statusDiv = document.getElementById('status');
+        function startStacking() {
+            document.getElementById("status").innerText = "🔧 機器手臂運作中，請勿靠近...";
             
-            statusDiv.innerText = "⏳ 指令傳送中...";
-            statusDiv.style.color = "blue";
-
-            fetch('/start_build', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shape_name: shape })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    statusDiv.innerText = "✅ 收到指令！手臂開始工作中...";
-                    statusDiv.style.color = "green";
+            fetch('/start', { method: 'POST' })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById("status").innerText = "✅ 堆疊完成！";
                 } else {
-                    statusDiv.innerText = "❌ 錯誤：" + data.message;
-                    statusDiv.style.color = "red";
+                    document.getElementById("status").innerText = "❌ 發生錯誤";
                 }
             })
             .catch(error => {
-                statusDiv.innerText = "❌ 連線失敗！請檢查樹莓派";
-                statusDiv.style.color = "red";
+                console.error('Error:', error);
+                document.getElementById("status").innerText = "❌ 連線錯誤";
             });
         }
     </script>
