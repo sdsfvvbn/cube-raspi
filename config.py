@@ -8,7 +8,7 @@ PIN_SHOULDER = 13  # 左臂 (肩)
 
 # --- 2. 馬達轉動極限 (PWM 脈衝寬度) ---
 # 夾爪: [張開, 閉合]
-LIMIT_GRIPPER = [1600, 2350]
+LIMIT_GRIPPER = [800, 2350]
 
 # 底座: [最右, 最左]
 LIMIT_BASE = [900, 2000]
@@ -17,7 +17,7 @@ LIMIT_BASE = [900, 2000]
 LIMIT_SHOULDER = [1550, 2350]
 
 # 右臂 (Middle/Elbow): [最低, 最高]
-LIMIT_ELBOW = [1000, 1700]
+LIMIT_ELBOW = [900, 2300]
 
 # --- 3. 戰場地圖 ---
 FEEDER_LOCATIONS = {

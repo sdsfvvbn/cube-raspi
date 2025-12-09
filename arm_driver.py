@@ -49,7 +49,7 @@ class MeArm:
     def move_gripper(self, percent):
         """ 
         控制夾爪 
-        0%   = 張開 (1600)
+        0%   = 張開 (900)
         100% = 閉合 (2350)
         """
         target_pwm = self._map_percent(percent, config.LIMIT_GRIPPER)
@@ -71,23 +71,23 @@ if __name__ == "__main__":
     try:
         print("1. 底座轉到中間 (50%)...")
         arm.move_base(50)
-        time.sleep(1)
+        time.sleep(2)
 
         print("2. 左臂抬起 (50%)...")
         arm.move_shoulder(50)
-        time.sleep(1)
+        time.sleep(2)
         
         print("3. 右臂(Middle) 移動 (50%)...")
         arm.move_middle(50)
-        time.sleep(1)
+        time.sleep(2)
 
         print("4. 夾爪測試：開(0) -> 合(100)")
         arm.move_gripper(0)   # 張開
-        time.sleep(1)
+        time.sleep(2)
         arm.move_gripper(100) # 閉合 (夾緊)
-        time.sleep(1)
+        time.sleep(2)
         arm.move_gripper(0)   # 再張開
-        time.sleep(1)
+        time.sleep(2)
 
         print("測試完成！馬達放鬆。")
         

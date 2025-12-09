@@ -14,14 +14,14 @@ PIN_BASE     = 19
 PIN_SHOULDER = 13
 
 # 夾爪設定
-GRIPPER_OPEN  = 1600
+GRIPPER_OPEN  = 900
 GRIPPER_CLOSE = 2350
 
 # 初始位置 (開機時預設的位置)
 current_pos = {
     'base': 1500,
     'shoulder': 1500,
-    'elbow': 1550,
+    'elbow': 1700,
     'gripper': 1600
 }
 
@@ -53,11 +53,10 @@ print("🚀 系統啟動中... (執行軟啟動以保護電池)")
 startup_sequence = ['base', 'shoulder', 'elbow', 'gripper']
 
 for name in startup_sequence:
-    pin = PINS[name]
-    val = current_pos[name]
+    
     print(f"   -> 啟動 {name}...")
-    set_servo(pin, val)
-    time.sleep(0.5) # 關鍵：每顆馬達間隔 0.5 秒
+    
+    time.sleep(0.1) # 關鍵：每顆馬達間隔 0.5 秒
 
 print("✅ 啟動完成，系統穩定！")
 
