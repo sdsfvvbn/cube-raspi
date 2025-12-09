@@ -9,7 +9,7 @@ if not pi.connected:
     print("❌ 無法連接 pigpio，請執行 'sudo pigpiod'")
     exit()
 
-# 設定馬達
+# === 關鍵修正：確保這裡的 Keys 和下面 current_pos 的 Keys 完全一致 ===
 MOTORS = {
     'Base': config.PIN_BASE,
     'Shoulder': config.PIN_SHOULDER,
@@ -17,78 +17,75 @@ MOTORS = {
     'Gripper': config.PIN_GRIPPER
 }
 
-# 初始位置
 current_pos = {
-    'Base': 1500,
+    'Base': 1420,
     'Shoulder': 1500,
-    'Elbow': 1500,
+    'Elbow': 1800,
     'Gripper': config.GRIPPER_OPEN
 }
 
-# 調整步進值 (加大預設值以解決力度不足問題)
-STEP_FINE = 10   # 精細 (還是覺得沒力就改成 15)
-STEP_NORMAL = 30 # 正常
-STEP_FAST = 80   # 快速
-
+# 步進值設定
+STEP_FINE = 10
+STEP_NORMAL = 30
+STEP_FAST = 80
 current_step = STEP_NORMAL 
 
 def update_servos():
     """寫入數值到馬達"""
     for name, pin in MOTORS.items():
+        # 這裡會用 name 去 current_pos 找數值，所以 name 必須完全一樣
+        if name not in current_pos:
+            continue
+            
         # 安全限制
         if current_pos[name] < 500: current_pos[name] = 500
         if current_pos[name] > 2500: current_pos[name] = 2500
+        
         pi.set_servo_pulsewidth(pin, current_pos[name])
 
 def draw_interface(stdscr):
-    """繪製介面 (只負責畫圖，不負責邏輯)"""
     stdscr.erase()
-    stdscr.addstr(0, 0, "=== MeArm 極速校正工具 v2 ===", curses.A_BOLD)
-    stdscr.addstr(1, 0, "🚀 已優化：無延遲 / 高扭力模式")
+    stdscr.addstr(0, 0, "=== MeArm Calibrate Tool v3 ===", curses.A_BOLD)
     
-    stdscr.addstr(3, 0, "[控制按鍵]")
-    stdscr.addstr(4, 2, "⬅️ ➡️   : 底座 (Base)")
-    stdscr.addstr(5, 2, "⬆️ ⬇️   : 肩膀 (Shoulder) - 最吃力")
-    stdscr.addstr(6, 2, "W / S   : 手肘 (Elbow)")
-    stdscr.addstr(7, 2, "O / P   : 夾爪 (Gripper)")
+    stdscr.addstr(2, 0, "[Controls]")
+    stdscr.addstr(3, 2, "Left/Right : Base")
+    stdscr.addstr(4, 2, "Up/Down    : Shoulder")
+    stdscr.addstr(5, 2, "W / S      : Elbow")
+    stdscr.addstr(6, 2, "O / P      : Gripper")
     
-    speed_str = "正常 (30)"
-    if current_step == STEP_FINE: speed_str = "精細 (10)"
-    if current_step == STEP_FAST: speed_str = "極速 (80)"
+    # 顯示目前速度
+    speed_txt = "NORMAL"
+    if current_step == STEP_FINE: speed_txt = "FINE"
+    if current_step == STEP_FAST: speed_txt = "FAST"
+    stdscr.addstr(8, 2, f"1/2/3 Speed: [{speed_txt} ({current_step})]")
     
-    stdscr.addstr(9, 2, f"1/2/3 切換速度: 目前 [{speed_str}]")
-    
-    stdscr.addstr(11, 0, "=== 記錄這些數值 ===", curses.A_REVERSE)
-    row = 13
+    # 顯示數值
+    stdscr.addstr(10, 0, "=== Current Values (Save These!) ===", curses.A_REVERSE)
+    row = 12
     for name, val in current_pos.items():
         stdscr.addstr(row, 2, f"{name:<10}: {val}")
         row += 1
     
-    stdscr.addstr(row+1, 0, "按 'Q' 離開")
+    stdscr.addstr(row+1, 0, "Press 'Q' to Quit")
     stdscr.refresh()
 
 def main(stdscr):
     global current_step
     
-    # 設置 curses
     curses.curs_set(0)
-    stdscr.nodelay(1) # 非阻塞模式
+    stdscr.nodelay(1)
     
-    # 先歸位
     update_servos()
     draw_interface(stdscr)
 
     while True:
-        # 1. 讀取按鍵
         key = stdscr.getch()
 
-        # 如果沒按鍵，就休息一下避免吃滿 CPU，但時間要極短
         if key == -1:
-            time.sleep(0.02) 
+            time.sleep(0.02)
             continue
 
-        # 2. 處理邏輯
-        needs_redraw = True # 只有按鍵時才重畫介面
+        needs_redraw = True
 
         if key == ord('q'): break
         
@@ -107,18 +104,15 @@ def main(stdscr):
         elif key == ord('o'): current_pos['Gripper'] -= current_step
         elif key == ord('p'): current_pos['Gripper'] += current_step
         else:
-            needs_redraw = False # 無效按鍵不重畫
+            needs_redraw = False
 
-        # 3. 執行與畫面更新
         if needs_redraw:
             update_servos()
             draw_interface(stdscr)
         
-        # 🔥【關鍵修改】清除輸入緩衝區 🔥
-        # 這行會把積壓在佇列裡的按鍵全部丟掉，確保下一圈讀到的是「現在」的狀態
         curses.flushinp()
 
-    # 結束時放鬆馬達
+    # 結束時關閉馬達
     for pin in MOTORS.values():
         pi.set_servo_pulsewidth(pin, 0)
 
