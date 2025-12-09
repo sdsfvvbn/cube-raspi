@@ -25,20 +25,20 @@ def move_block(target_x, target_y, target_z):
     print(f"🚜 搬運積木到: ({target_x}, {target_y}, {target_z})")
 
     # 1. --- 去取料點 ---
-    # bot.move_to_safe(SAFE_HEIGHT)       # 抬高
-    # bot.move_to(*FEEDER_POS)            # 到取料點上方
-    # bot.move_gripper(0)                 # 張開
-    # bot.move_to(FEEDER_POS[0], FEEDER_POS[1], 5) # 下降取料
-    # bot.move_gripper(100)               # 夾緊
-    # time.sleep(0.5)
-    # bot.move_to(*FEEDER_POS)            # 抬起 (回到原本高度)
+     bot.move_to_safe(SAFE_HEIGHT)       # 抬高
+     bot.move_to(*FEEDER_POS)            # 到取料點上方
+     bot.move_gripper(0)                 # 張開
+     bot.move_to(FEEDER_POS[0], FEEDER_POS[1], 5) # 下降取料
+     bot.move_gripper(100)               # 夾緊
+     time.sleep(0.5)
+     bot.move_to(*FEEDER_POS)            # 抬起 (回到原本高度)
 
     # 2. --- 去放置點 ---
-    # bot.move_to_safe(SAFE_HEIGHT)       # 抬高過山車
-    # bot.move_to(target_x, target_y, target_z + 20) # 到目標正上方
-    # bot.move_to(target_x, target_y, target_z)      # 輕輕放下
-    # bot.move_gripper(0)                 # 張開
-    # bot.move_to(target_x, target_y, target_z + 30) # 抬高離開
+     bot.move_to_safe(SAFE_HEIGHT)       # 抬高過山車
+     bot.move_to(target_x, target_y, target_z + 20) # 到目標正上方
+     bot.move_to(target_x, target_y, target_z)      # 輕輕放下
+     bot.move_gripper(0)                 # 張開
+     bot.move_to(target_x, target_y, target_z + 30) # 抬高離開
 
     # (註：這裡我把實際動作註解掉了，您需要把您原本寫好的 move 函式整合進來)
     # 簡單模擬動作：
@@ -74,3 +74,4 @@ if __name__ == '__main__':
     # 啟動 Web Server，允許區網連線
 
     app.run(host='0.0.0.0', port=5000, debug=True)
+
