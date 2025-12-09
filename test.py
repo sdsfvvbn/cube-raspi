@@ -21,7 +21,7 @@ MOTORS = {
 current_pos = {
     'Base (底座)': 1500,
     'Shoulder (肩膀)': 1500,
-    'Elbow (手肘)': 1500,
+    'Elbow (手肘)': 1800,
     'Gripper (夾爪)': config.GRIPPER_OPEN
 }
 
