@@ -20,9 +20,9 @@ HOME_POS = {
 }
 
 # === 動作 1: 抓取點 (Pickup Point) - 供料區位置 ===
-PICKUP_HOVER = {'base': 1700, 'shoulder': 1500, 'elbow': 1700} # 準備抓取(高處)
-PICKUP_DOWN  = {'base': 1700, 'shoulder': 2200, 'elbow': 2000} # 下去抓(低處)
+PICKUP_HOVER = {'base': 1780, 'shoulder': 1500, 'elbow': 2000} # 準備抓取(高處)
+PICKUP_DOWN  = {'base': 1780, 'shoulder': 1000, 'elbow': 2000} # 下去抓(低處)
 
 # === 動作 2: 放置點 (Place Point) - 堆疊位置 ===
-PLACE_HOVER  = {'base': 1420, 'shoulder': 1800, 'elbow': 1800} # 準備放置(高處)
-PLACE_DOWN   = {'base': 14200, 'shoulder': 2100, 'elbow': 1900} # 下去放(低處)
+PLACE_HOVER  = {'base': 1420, 'shoulder': 1500, 'elbow': 2300} # 準備放置(高處)
+PLACE_DOWN   = {'base': 1420, 'shoulder': 1200, 'elbow': 2300} # 下去放(低處)
