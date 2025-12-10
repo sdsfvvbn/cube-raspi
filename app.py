@@ -1,17 +1,19 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import pigpio
 import time
-import config  # 匯入剛剛的設定檔
+import config  # 讀取上面的設定檔
 
 app = Flask(__name__)
 
-# 初始化 pigpio
+# === 初始化 pigpio ===
 pi = pigpio.pi()
 if not pi.connected:
-    print("無法連接到 pigpio daemon，請先執行 'sudo pigpiod'")
-    exit()
+    print("❌ 錯誤：無法連接 pigpio daemon，請先執行 'sudo pigpiod'")
+    # 為了不讓程式直接掛掉，我們只印錯誤，但實際操作會沒反應
+else:
+    print("✅ pigpio 連線成功")
 
-# 目前馬達的位置紀錄 (全域變數)
+# === 記錄目前位置 (初始化為 Home) ===
 current_pos = {
     'base': config.HOME_POS['base'],
     'shoulder': config.HOME_POS['shoulder'],
@@ -19,125 +21,125 @@ current_pos = {
     'gripper': config.GRIPPER_OPEN
 }
 
-def set_servo(pin, pulse):
-    """直接設定馬達 (用於夾爪或快速歸位)"""
-    pi.set_servo_pulsewidth(pin, pulse)
+# 腳位對應表
+PINS = {
+    'base': config.PIN_BASE,
+    'shoulder': config.PIN_SHOULDER,
+    'elbow': config.PIN_ELBOW,
+    'gripper': config.PIN_GRIPPER
+}
 
-def slow_move(target_base, target_shoulder, target_elbow, speed=0.005):
-    """
-    平滑移動函式：解決 README 提到的抖動問題
-    同步移動三個軸，避免單軸移動造成路徑怪異
-    """
+def move_servo(axis, val):
+    """安全移動馬達"""
     global current_pos
     
-    # 簡單的線性插值邏輯 (Step-by-step)
-    # 這裡為了簡化，我們先依序移動軸，實際專案可做多執行緒同步
+    # 1. 限制安全範圍 (500~2500)
+    if val < 500: val = 500
+    if val > 2500: val = 2500
+    
+    # 2. 發送訊號
+    if pi.connected:
+        pi.set_servo_pulsewidth(PINS[axis], val)
+    
+    # 3. 更新記憶
+    current_pos[axis] = val
+
+def slow_move_to(target_pos_dict):
+    """
+    (自動模式專用) 
+    依序移動三個軸，且動作放慢，確保安全
+    """
     # 1. 移動底座
-    move_single_axis(config.PIN_BASE, 'base', target_base, speed)
+    move_servo('base', target_pos_dict['base'])
+    time.sleep(2)  # <--- [安全延遲] 這裡改成等待 2 秒
+    
     # 2. 移動肩膀
-    move_single_axis(config.PIN_SHOULDER, 'shoulder', target_shoulder, speed)
+    move_servo('shoulder', target_pos_dict['shoulder'])
+    time.sleep(2)  # <--- [安全延遲] 等待 2 秒
+    
     # 3. 移動手肘
-    move_single_axis(config.PIN_ELBOW, 'elbow', target_elbow, speed)
+    move_servo('elbow', target_pos_dict['elbow'])
+    time.sleep(2)  # <--- [安全延遲] 等待 2 秒
 
-def move_single_axis(pin, axis_name, target, speed):
-    """單軸平滑移動"""
-    start = current_pos[axis_name]
-    step = 10 if target > start else -10
-    
-    for pulse in range(start, target, step):
-        pi.set_servo_pulsewidth(pin, pulse)
-        time.sleep(speed) # 控制速度
-    
-    # 確保最後準確到達目標
-    pi.set_servo_pulsewidth(pin, target)
-    current_pos[axis_name] = target
-
-def soft_start():
-    """軟啟動：解決 README 提到的啟動電流暴衝問題"""
-    print("執行軟啟動...")
-    servos = [
-        (config.PIN_BASE, config.HOME_POS['base']),
-        (config.PIN_SHOULDER, config.HOME_POS['shoulder']),
-        (config.PIN_ELBOW, config.HOME_POS['elbow']),
-        (config.PIN_GRIPPER, config.GRIPPER_OPEN)
-    ]
-    
-    for pin, val in servos:
-        pi.set_servo_pulsewidth(pin, val)
-        time.sleep(0.5) # 每顆馬達間隔 0.5 秒通電
-    
-    # 更新目前位置紀錄
-    global current_pos
-    current_pos = config.HOME_POS.copy()
-    current_pos['gripper'] = config.GRIPPER_OPEN
-    print("軟啟動完成，手臂就緒。")
-
-# === 寫死的自動化流程 ===
-def execute_stack_sequence():
-    print("開始執行自動堆疊...")
-    
-    # 1. 回到 Home (確保安全)
-    slow_move(config.HOME_POS['base'], config.HOME_POS['shoulder'], config.HOME_POS['elbow'])
-    set_servo(config.PIN_GRIPPER, config.GRIPPER_OPEN)
-    time.sleep(0.5)
-
-    # 2. 移動到供料區上方 (Hover)
-    print("移動至供料區上方...")
-    slow_move(config.PICKUP_HOVER['base'], config.PICKUP_HOVER['shoulder'], config.PICKUP_HOVER['elbow'])
-    
-    # 3. 下降抓取
-    print("下降抓取...")
-    slow_move(config.PICKUP_DOWN['base'], config.PICKUP_DOWN['shoulder'], config.PICKUP_DOWN['elbow'])
-    time.sleep(0.5)
-    
-    # 4. 夾緊 (快速動作)
-    print("夾取積木！")
-    set_servo(config.PIN_GRIPPER, config.GRIPPER_CLOSE)
-    time.sleep(0.5)
-    
-    # 5. 抬起 (回到 Hover)
-    print("抬起...")
-    slow_move(config.PICKUP_HOVER['base'], config.PICKUP_HOVER['shoulder'], config.PICKUP_HOVER['elbow'])
-    
-    # 6. 移動到放置區上方
-    print("搬運中...")
-    slow_move(config.PLACE_HOVER['base'], config.PLACE_HOVER['shoulder'], config.PLACE_HOVER['elbow'])
-    
-    # 7. 下降放置
-    print("放置積木...")
-    slow_move(config.PLACE_DOWN['base'], config.PLACE_DOWN['shoulder'], config.PLACE_DOWN['elbow'])
-    time.sleep(0.5)
-    
-    # 8. 鬆開夾爪
-    print("鬆開...")
-    set_servo(config.PIN_GRIPPER, config.GRIPPER_OPEN)
-    time.sleep(0.5)
-    
-    # 9. 抬起並回 Home
-    print("任務完成，回歸原點。")
-    slow_move(config.PLACE_HOVER['base'], config.PLACE_HOVER['shoulder'], config.PLACE_HOVER['elbow'])
-    slow_move(config.HOME_POS['base'], config.HOME_POS['shoulder'], config.HOME_POS['elbow'])
-
-# === Web路由 ===
+# ========================
+#        Web 路由
+# ========================
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/start', methods=['POST'])
-def start_stacking():
-    # 執行寫死的流程
-    execute_stack_sequence()
-    return "OK"
+# 功能 1: 手機手動遙控
+@app.route('/move', methods=['POST'])
+def manual_move():
+    data = request.json
+    axis = data.get('axis')
+    step = int(data.get('step'))
+    
+    if axis in current_pos:
+        new_val = current_pos[axis] + step
+        move_servo(axis, new_val)
+        return jsonify({"status": "success", "val": new_val})
+    return jsonify({"status": "error"}), 400
 
+# 功能 2: 自動堆疊 (寫死的流程)
+@app.route('/auto_stack', methods=['POST'])
+def auto_stack():
+    print("🤖 收到指令，開始自動堆疊...")
+    
+    # 1. 回正
+    move_servo('gripper', config.GRIPPER_OPEN)
+    slow_move_to(config.HOME_POS)
+    
+    # 2. 去抓取
+    slow_move_to(config.PICKUP_HOVER) # 移到上方
+    slow_move_to(config.PICKUP_DOWN)  # 下降
+    time.sleep(1)
+    move_servo('gripper', config.GRIPPER_CLOSE) # 夾緊
+    time.sleep(1)
+    slow_move_to(config.PICKUP_HOVER) # 抬起
+    
+    # 3. 去放置
+    slow_move_to(config.PLACE_HOVER)  # 移到上方
+    slow_move_to(config.PLACE_DOWN)   # 下降
+    time.sleep(1)
+    move_servo('gripper', config.GRIPPER_OPEN) # 鬆開
+    time.sleep(1)
+    slow_move_to(config.PLACE_HOVER)  # 抬起離開
+    
+    # 4. 回家
+    slow_move_to(config.HOME_POS)
+    
+    return jsonify({"status": "completed"})
+
+# ========================
+#      主程式進入點
+# ========================
 if __name__ == '__main__':
-    try:
-        soft_start() # 程式啟動時先執行軟啟動
-        app.run(host='0.0.0.0', port=5000, debug=True)
-    finally:
-        # 程式結束時關閉 PWM (放鬆馬達)
-        pi.set_servo_pulsewidth(config.PIN_BASE, 0)
-        pi.set_servo_pulsewidth(config.PIN_SHOULDER, 0)
-        pi.set_servo_pulsewidth(config.PIN_ELBOW, 0)
-        pi.set_servo_pulsewidth(config.PIN_GRIPPER, 0)
-        pi.stop()
+    print("\n🚀 系統啟動程序開始...")
+    print("⚠️  警告：馬達將開始歸位，請確保手臂周圍淨空！")
+    print("---------------------------------------------")
+
+    # [安全啟動邏輯] 依序歸位，中間休息 2.5 秒
+    
+    print("1. 正在歸位：底座 (Base)...")
+    move_servo('base', config.HOME_POS['base'])
+    time.sleep(2.5) 
+    
+    print("2. 正在歸位：肩膀 (Shoulder)...")
+    move_servo('shoulder', config.HOME_POS['shoulder'])
+    time.sleep(2.5) 
+    
+    print("3. 正在歸位：手肘 (Elbow)...")
+    move_servo('elbow', config.HOME_POS['elbow'])
+    time.sleep(2.5) 
+    
+    print("4. 初始化夾爪...")
+    move_servo('gripper', config.GRIPPER_OPEN)
+    time.sleep(1)
+    
+    print("---------------------------------------------")
+    print("✅ 歸位完成，Web Server 啟動中...")
+    print(f"🔗 請用手機瀏覽器開啟: http://[樹莓派IP]:5000")
+    
+    app.run(host='0.0.0.0', port=5000, debug=True)
