@@ -10,7 +10,7 @@ PIN_GRIPPER = 18   # 夾爪
 
 # 夾爪狀態
 GRIPPER_OPEN = 900   # 鬆開數值 (請自行微調)
-GRIPPER_CLOSE = 2300  # 夾緊數值 (請自行微調)
+GRIPPER_CLOSE = 1860  # 夾緊數值 (請自行微調)
 
 # === 預設位置 (Home) ===
 HOME_POS = {
