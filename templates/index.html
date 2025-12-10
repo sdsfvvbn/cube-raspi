@@ -2,60 +2,143 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MeArm 控制中心</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
-        h1 { color: #333; }
-        .btn {
-            background-color: #4CAF50; /* Green */
-            border: none;
-            color: white;
-            padding: 20px 40px;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2b2b2b;
+            color: #eee;
             text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 24px;
-            margin: 20px 2px;
-            cursor: pointer;
-            border-radius: 10px;
-            box-shadow: 0 4px #999;
+            padding: 15px;
+            user-select: none; /* 防止連點反白 */
         }
-        .btn:active {
-            background-color: #3e8e41;
-            box-shadow: 0 2px #666;
-            transform: translateY(2px);
+        h2 { color: #f1c40f; margin-top: 0; }
+        
+        .panel {
+            background: #3e3e3e;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
-        #status { margin-top: 20px; font-weight: bold; color: #555; }
+
+        /* 按鈕樣式 */
+        button {
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            margin: 4px;
+            touch-action: manipulation; /* 優化觸控 */
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.96); opacity: 0.9; }
+
+        .btn-dir { background-color: #3498db; width: 70px; height: 60px; }
+        .btn-action { background-color: #e67e22; width: 45%; padding: 12px; }
+        .btn-auto { 
+            background-color: #27ae60; 
+            width: 100%; 
+            padding: 20px; 
+            font-size: 22px;
+            box-shadow: 0 4px #1e8449;
+        }
+        .btn-auto:active { box-shadow: 0 2px #1e8449; transform: translateY(2px); }
+
+        /* 十字鍵網格 */
+        .d-pad {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+            max-width: 240px;
+            margin: 10px auto;
+        }
+        .empty { visibility: hidden; }
+
+        /* 速度選單 */
+        .speed-control { margin-bottom: 10px; font-size: 14px; }
+        input[type=radio] { transform: scale(1.5); margin: 0 5px; }
+        
+        #status { height: 20px; color: #f39c12; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1>🧱 MeArm 積木自動堆疊</h1>
-    <p>目前的模式：單一積木堆疊 (Hardcoded)</p>
+    <div class="panel">
+        <h2>🎮 手動微調</h2>
+        
+        <div class="speed-control">
+            移動步距: 
+            <label><input type="radio" name="step" value="10">微(10)</label>
+            <label><input type="radio" name="step" value="30" checked>中(30)</label>
+            <label><input type="radio" name="step" value="80">快(80)</label>
+        </div>
 
-    <button class="btn" onclick="startStacking()">開始堆疊 (Start)</button>
+        <div class="d-pad">
+            <div class="empty"></div>
+            <button class="btn-dir" onclick="move('shoulder', 1)">前<br>▲</button>
+            <div class="empty"></div>
 
-    <div id="status">等待指令...</div>
+            <button class="btn-dir" onclick="move('base', 1)">左<br>◀</button>
+            <button class="btn-dir" onclick="move('shoulder', -1)">後<br>▼</button>
+            <button class="btn-dir" onclick="move('base', -1)">右<br>▶</button>
+        </div>
+
+        <hr style="border-color:#555; margin: 15px 0;">
+
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <button class="btn-action" style="background:#8e44ad" onclick="move('elbow', -1)">⬆ 手肘抬高</button>
+            <button class="btn-action" style="background:#8e44ad" onclick="move('elbow', 1)">⬇ 手肘壓低</button>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button class="btn-action" onclick="move('gripper', -1)">👐 鬆開夾爪</button>
+            <button class="btn-action" onclick="move('gripper', 1)">✊ 夾緊夾爪</button>
+        </div>
+    </div>
+
+    <div class="panel" style="border: 2px solid #27ae60;">
+        <h2>🤖 自動堆疊</h2>
+        <p style="font-size: 14px; color: #bbb; margin-bottom: 10px;">請先手動將積木放置於供料區</p>
+        <button class="btn-auto" onclick="startAuto()">🚀 執行任務</button>
+        <div id="status"></div>
+    </div>
 
     <script>
-        function startStacking() {
-            document.getElementById("status").innerText = "🔧 機器手臂運作中，請勿靠近...";
+        // 取得目前設定的步距
+        function getStep() {
+            return parseInt(document.querySelector('input[name="step"]:checked').value);
+        }
+
+        // 手動控制 API
+        function move(axis, dir) {
+            let step = getStep() * dir;
+            // 根據你的硬體，若方向相反請在這裡加負號，例如: if(axis==='shoulder') step = -step;
+
+            fetch('/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ axis: axis, step: step })
+            });
+        }
+
+        // 自動堆疊 API
+        function startAuto() {
+            let status = document.getElementById("status");
+            status.innerText = "⏳ 機器人運作中，請勿靠近...";
             
-            fetch('/start', { method: 'POST' })
-            .then(response => {
-                if (response.ok) {
-                    document.getElementById("status").innerText = "✅ 堆疊完成！";
-                } else {
-                    document.getElementById("status").innerText = "❌ 發生錯誤";
-                }
+            fetch('/auto_stack', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                status.innerText = "✅ 任務完成！";
+                setTimeout(() => status.innerText = "", 3000);
             })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById("status").innerText = "❌ 連線錯誤";
+            .catch(err => {
+                status.innerText = "❌ 錯誤：無法連線";
             });
         }
     </script>
-
 </body>
 </html>
