@@ -3,144 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeArm 控制中心</title>
+    <title>MeArm Pro 控制台</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #2b2b2b;
-            color: #eee;
-            text-align: center;
-            padding: 15px;
-            user-select: none; /* 防止連點反白 */
-        }
-        h2 { color: #f1c40f; margin-top: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #222; color: #fff; text-align: center; padding: 10px; user-select: none; }
         
-        .panel {
-            background: #3e3e3e;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
+        .header { background: #333; padding: 10px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0; font-size: 18px; }
+        .btn-home { background: #ff9800; border: none; border-radius: 5px; color: white; padding: 8px 15px; font-weight: bold; }
 
-        /* 按鈕樣式 */
-        button {
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            padding: 15px;
-            margin: 4px;
-            touch-action: manipulation; /* 優化觸控 */
-            transition: transform 0.1s;
-        }
-        button:active { transform: scale(0.96); opacity: 0.9; }
+        .panel { background: #333; border-radius: 15px; padding: 15px; margin-bottom: 20px; }
+        button { cursor: pointer; touch-action: manipulation; }
+        button:active { transform: scale(0.95); opacity: 0.8; }
 
-        .btn-dir { background-color: #3498db; width: 70px; height: 60px; }
-        .btn-action { background-color: #e67e22; width: 45%; padding: 12px; }
-        .btn-auto { 
-            background-color: #27ae60; 
-            width: 100%; 
-            padding: 20px; 
-            font-size: 22px;
-            box-shadow: 0 4px #1e8449;
-        }
-        .btn-auto:active { box-shadow: 0 2px #1e8449; transform: translateY(2px); }
-
-        /* 十字鍵網格 */
-        .d-pad {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 5px;
-            max-width: 240px;
-            margin: 10px auto;
-        }
+        /* 手動控制區樣式 */
+        .d-pad { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; max-width: 260px; margin: 0 auto; }
+        .btn-dir { background: #2196F3; border: none; border-radius: 8px; color: white; height: 60px; font-size: 20px; font-weight: bold; }
         .empty { visibility: hidden; }
 
-        /* 速度選單 */
-        .speed-control { margin-bottom: 10px; font-size: 14px; }
-        input[type=radio] { transform: scale(1.5); margin: 0 5px; }
+        .elbow-group, .gripper-group { display: flex; justify-content: space-between; margin-top: 10px; }
+        .btn-elbow { width: 48%; background: #9c27b0; border: none; border-radius: 8px; padding: 15px; color: white; font-size: 18px; }
+        .btn-grip { width: 48%; padding: 15px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; }
+        .btn-open { background: #00bcd4; color: black; }
+        .btn-close { background: #f44336; color: white; }
+
+        /* 自動堆疊區樣式 */
+        .auto-controls { display: flex; flex-direction: column; gap: 10px; }
         
-        #status { height: 20px; color: #f39c12; font-weight: bold; }
+        select {
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: none;
+            background: #444;
+            color: white;
+            outline: none;
+        }
+
+        .btn-auto {
+            background: #4CAF50;
+            border: none;
+            padding: 20px;
+            font-size: 22px;
+            border-radius: 10px;
+            color: white;
+            box-shadow: 0 4px #2e7d32;
+        }
+
+        .speed-opt { margin-bottom: 10px; font-size: 14px; }
+        input[type=radio] { transform: scale(1.3); margin: 0 5px; }
     </style>
 </head>
 <body>
 
+    <div class="header">
+        <h2>🎮 MeArm 控制台</h2>
+        <button class="btn-home" onclick="goHome()">🏠 歸位</button>
+    </div>
+
     <div class="panel">
-        <h2>🎮 手動微調</h2>
-        
-        <div class="speed-control">
-            移動步距: 
-            <label><input type="radio" name="step" value="10">微(10)</label>
-            <label><input type="radio" name="step" value="30" checked>中(30)</label>
-            <label><input type="radio" name="step" value="80">快(80)</label>
+        <div class="speed-opt">
+            速度: 
+            <label><input type="radio" name="step" value="20">微(20)</label>
+            <label><input type="radio" name="step" value="80" checked>快(80)</label>
         </div>
 
         <div class="d-pad">
             <div class="empty"></div>
-            <button class="btn-dir" onclick="move('shoulder', 1)">前<br>▲</button>
+            <button class="btn-dir" onclick="move('shoulder', 1)">▲</button>
             <div class="empty"></div>
-
-            <button class="btn-dir" onclick="move('base', -1)">左<br>◀</button>
-            <button class="btn-dir" onclick="move('shoulder', -1)">後<br>▼</button>
-            <button class="btn-dir" onclick="move('base', 1)">右<br>▶</button>
+            <button class="btn-dir" onclick="move('base', -1)">◀</button>
+            <button class="btn-dir" onclick="move('shoulder', -1)">▼</button>
+            <button class="btn-dir" onclick="move('base', 1)">▶</button>
         </div>
-        
 
-        <hr style="border-color:#555; margin: 15px 0;">
-
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <button class="btn-action" style="background:#8e44ad" onclick="move('elbow', -1)">⬆ 手肘抬高</button>
-            <button class="btn-action" style="background:#8e44ad" onclick="move('elbow', 1)">⬇ 手肘壓低</button>
+        <div class="elbow-group">
+            <button class="btn-elbow" onclick="move('elbow', -1)">⬆ 肘抬</button>
+            <button class="btn-elbow" onclick="move('elbow', 1)">⬇ 肘壓</button>
         </div>
-        <div style="display: flex; justify-content: space-between;">
-            <button class="btn-action" onclick="move('gripper', -1)">👐 鬆開夾爪</button>
-            <button class="btn-action" onclick="move('gripper', 1)">✊ 夾緊夾爪</button>
+
+        <div class="gripper-group">
+            <button class="btn-grip btn-open" onclick="setGripper('open')">👐 開</button>
+            <button class="btn-grip btn-close" onclick="setGripper('close')">✊ 夾</button>
         </div>
     </div>
 
-    <div class="panel" style="border: 2px solid #27ae60;">
-        <h2>🤖 自動堆疊</h2>
-        <p style="font-size: 14px; color: #bbb; margin-bottom: 10px;">請先手動將積木放置於供料區</p>
-        <button class="btn-auto" onclick="startAuto()">🚀 執行任務</button>
-        <div id="status"></div>
+    <div class="panel" style="border: 2px solid #4CAF50;">
+        <div class="auto-controls">
+            <select id="stackMode">
+                <option value="single">🧱 單一堆疊 (Single)</option>
+                <option value="pyramid">🏗️ 金字塔 (連續執行)</option>
+            </select>
+            
+            <button class="btn-auto" onclick="runTask()">🚀 執行任務</button>
+        </div>
+        <p id="status" style="color:#aaa; font-size:14px; margin-top:10px;"></p>
     </div>
 
     <script>
-        // 取得目前設定的步距
-        function getStep() {
-            return parseInt(document.querySelector('input[name="step"]:checked').value);
-        }
+        function getStep() { return parseInt(document.querySelector('input[name="step"]:checked').value); }
 
-        // 手動控制 API
         function move(axis, dir) {
-            let step = getStep() * dir;
-            // 根據你的硬體，若方向相反請在這裡加負號，例如: if(axis==='shoulder') step = -step;
-
-            fetch('/move', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ axis: axis, step: step })
-            });
+            fetch('/move', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ axis: axis, step: getStep() * dir }) });
         }
 
-        // 自動堆疊 API
-        function startAuto() {
+        function setGripper(action) {
+            fetch('/set_gripper', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: action }) });
+        }
+
+        function goHome() {
+            if(confirm("強制歸位？")) fetch('/home', { method: 'POST' });
+        }
+
+        // 整合執行函式
+        function runTask() {
+            let mode = document.getElementById("stackMode").value;
             let status = document.getElementById("status");
-            status.innerText = "⏳ 機器人運作中，請勿靠近...";
+            let endpoint = (mode === 'single') ? '/auto_stack' : '/build_pyramid';
+
+            status.innerText = "⏳ 任務執行中...";
             
-            fetch('/auto_stack', { method: 'POST' })
+            fetch(endpoint, { method: 'POST' })
             .then(res => res.json())
             .then(data => {
-                status.innerText = "✅ 任務完成！";
-                setTimeout(() => status.innerText = "", 3000);
+                if(data.status === 'completed') {
+                    status.innerText = "✅ 任務完成";
+                } else if (data.status === 'error') {
+                    status.innerText = "❌ 發生錯誤";
+                }
+                setTimeout(() => status.innerText = "", 5000);
             })
-            .catch(err => {
-                status.innerText = "❌ 錯誤：無法連線";
-            });
+            .catch(err => status.innerText = "❌ 連線錯誤");
         }
     </script>
 </body>
 </html>
-
