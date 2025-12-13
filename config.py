@@ -65,3 +65,36 @@ PYRAMID_POSITIONS = [
         'down':  {'base': 1420, 'shoulder': 1300, 'elbow': 2100} 
     }
 ]
+
+# config.py 的最下面
+
+# === E. 橫向金字塔 (左右排列 + 高空投擲版) ===
+# 策略：底層左右分開，頂層從高空鬆開，避開夾爪干涉
+SHAPE_PYRAMID_SIDE = [
+    # [第 1 顆] 底層左邊 (Base 往左偏)
+    {
+        'name': 'Bottom_Left',
+        'hover': {'base': 1320, 'shoulder': 1500, 'elbow': 2150},
+        'down':  {'base': 1320, 'shoulder': 1250, 'elbow': 2150} # 貼地
+    },
+    
+    # [第 2 顆] 底層右邊 (Base 往右偏)
+    # 這裡要留一點縫隙，不要貼太近，不然第3顆掉不進去
+    {
+        'name': 'Bottom_Right',
+        'hover': {'base': 1480, 'shoulder': 1500, 'elbow': 2150},
+        'down':  {'base': 1480, 'shoulder': 1250, 'elbow': 2150} # 貼地
+    },
+
+    # [第 3 顆] 頂層正中 (高空投擲)
+    {
+        'name': 'Top_Center',
+        'hover': {'base': 1400, 'shoulder': 1600, 'elbow': 2150},
+        
+        # [關鍵設定]
+        # 原本貼地是 1250，墊高一層是 1350
+        # 這裡我們設 1450 ~ 1500 (抬很高)
+        # 讓夾爪在「完全不接觸下面積木」的高度鬆開
+        'down':  {'base': 1400, 'shoulder': 1480, 'elbow': 2150} 
+    }
+]
