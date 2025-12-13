@@ -1,4 +1,4 @@
-# app.py - MeArm 最終完整版 (含緊急停止功能)
+# app.py - MeArm 最終完整版 (含緊急停止功能，移除過衝邏輯)
 from flask import Flask, render_template, request, jsonify
 import pigpio
 import time
@@ -93,7 +93,7 @@ def move_servo(axis, target_val, speed_mode='auto'):
             pi.set_servo_pulsewidth(PINS[axis], target_val)
             current_pos[axis] = target_val
 
-# --- 核心搬運 ---
+# --- 核心搬運 (已移除過衝邏輯) ---
 def perform_stacking(target_hover, target_down):
     global STOP_FLAG
     if STOP_FLAG: return # 開頭檢查
@@ -108,9 +108,9 @@ def perform_stacking(target_hover, target_down):
     if STOP_FLAG: return # 步驟間檢查
 
     move_servo('shoulder', config.PICKUP_HOVER['shoulder'])
-    move_servo('elbow', config.PICKUP_DOWN['elbow'] + 30) # 過衝
-    time.sleep(0.2)
-    move_servo('elbow', config.PICKUP_DOWN['elbow'])
+    
+    # [修改處] 這裡直接移動到 DOWN，不再 +30 過衝
+    move_servo('elbow', config.PICKUP_DOWN['elbow']) 
     time.sleep(0.3)
     
     move_servo('shoulder', config.PICKUP_DOWN['shoulder'])
@@ -135,7 +135,8 @@ def perform_stacking(target_hover, target_down):
     if STOP_FLAG: return
 
     # 3. 放置
-    print("    🎯 強制校正")
+    print("    🎯 定位")
+    # 這裡保留強制定位，確保精準，但沒有過衝
     move_servo('base', target_down['base'])
     move_servo('elbow', target_down['elbow'])
     time.sleep(0.3)
