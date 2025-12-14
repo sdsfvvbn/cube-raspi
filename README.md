@@ -98,7 +98,7 @@ I use **SG90 Micro Servos** for the joints. Each motor has 3 wires. It is crucia
 Wiring the SG90 Motors
 
 I use SG90 Micro Servos for the joints. Each motor has 3 wires. It is crucial to connect them correctly to avoid damaging the Raspberry Pi.
-
+![sg](https://hackmd.io/_uploads/rkU09Tsfbe.jpg)
 ⚠️ Critical Warning (Safety First)
 If you hear ANY strange noises (buzzing, clicking, or grinding) immediately after powering on:
 
