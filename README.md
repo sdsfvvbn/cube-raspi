@@ -34,10 +34,11 @@ https://youtu.be/oo5ojWQWFH8
 | :--- | :---: |
 | Raspberry Pi 4 | 1 |
 | MeArm or other 4do robot | 1 |
-| **SG90 Servo Motor** | **4** |
+| SG90 Servo Motor | 4 |
 | External 5V/3A Power Supply | 1 |
 | Breadboard | 1 |
 | Dupont Wires (M-M, M-F) | Many |
+| Screwdriver | 1 |
 
 #### Software
 
@@ -63,7 +64,7 @@ The system uses **Flask** to host a web page. When a user clicks a button, the c
 
 #### 1\. Set up Raspberry Pi OS
 
-Ensure your Raspberry Pi is running the latest OS and connected to Wi-Fi.
+https://www.raspberrypi.com/documentation/computers/getting-started.html
 
 #### 2\. Build the environment for this project
 
@@ -98,7 +99,6 @@ I use **SG90 Micro Servos** for the joints. Each motor has 3 wires. It is crucia
 Wiring the SG90 Motors
 
 I use SG90 Micro Servos for the joints. Each motor has 3 wires. It is crucial to connect them correctly to avoid damaging the Raspberry Pi.
-![sg](https://hackmd.io/_uploads/rkU09Tsfbe.jpg)
 ⚠️ Critical Warning (Safety First)
 If you hear ANY strange noises (buzzing, clicking, or grinding) immediately after powering on:
 
@@ -117,7 +117,10 @@ Do not force it. Check your wiring and mechanical joints before turning it on ag
   * **Orange/Yellow (Signal):** Connects to the Raspberry Pi GPIO pins.
   * **Red (VCC):** Connects to the **External Power Supply Positive (+)**.
   * **Brown (GND):** Connects to the **External Power Supply Negative (-)**.
-![sg](https://hackmd.io/_uploads/rkU09Tsfbe.jpg)
+
+![sg](https://github.com/user-attachments/assets/36444fcf-634c-4f83-ba06-518c99363efa)
+
+
 **2. GPIO Pin Mapping (BCM)**
 Connect the **Orange wires** to these specific pins:
 
@@ -144,6 +147,10 @@ However, for the signal to work, **you must connect the grounds together.**
 ### Build up the Web Controller
 
 My Controller: `app.py`
+
+#### 🛠️ Calibration Tool: `test.py`
+
+I use `test.py` for **angle testing** and calibration. Before running the main web interface, this script helps verify if the servos are responding correctly and allows you to find the precise angles for the arm's limits without launching the full web server.
 
 #### STEP 1: Motor Control with Pigpio
 
@@ -198,13 +205,6 @@ The Flask app serves an HTML page (`index.html`) that works on any smartphone. I
 
 -----
 
-### Let's Coding
-
-Here is my code for the whole project.
-**Link here:** [Your GitHub Repository Link]
-
------
-
 ### Reference
 
 **Servo Motor Control**
@@ -218,12 +218,16 @@ Here is my code for the whole project.
 **Mechanical Assembly**
 
   * **MeArm Instructables:** [https://www.instructables.com/MeArm-Robot-Arm-Your-Robot-V10/](https://www.instructables.com/MeArm-Robot-Arm-Your-Robot-V10/)
+  * **Building the MeArm Robotic Arm:**[ https://youtu.be/xlwTzrsWs48?si=mKXulEEEikdIX-DN]
+  * **Building the MeArm Robotic Arm:**[https://youtu.be/zFBsEE7_NbQ?si=ATxqNadojMZwVtkX]
 
-1.  **Raspberry Pi GPIO Scripting**: [https://www.instructables.com/Raspberry-Pi-Python-scripting-the-GPIO/](https://www.instructables.com/Raspberry-Pi-Python-scripting-the-GPIO/)
-2.  **IoT Core Kit Examples**: [https://github.com/ARM-software/Cloud-IoT-Core-Kit-Examples](https://github.com/ARM-software/Cloud-IoT-Core-Kit-Examples)
-3.  **MeArm Robot Arm Open Source Project**: [https://shop.mearm.com/](https://shop.mearm.com/) (Mechanical structure reference)
-4.  **pigpio Python Library**: [http://abyz.me.uk/rpi/pigpio/python.html](http://abyz.me.uk/rpi/pigpio/python.html) (PWM control implementation)
+**Raspberry Pi GPIO Scripting**: [https://www.instructables.com/Raspberry-Pi-Python-scripting-the-GPIO/](https://www.instructables.com/Raspberry-Pi-Python-scripting-the-GPIO/)
 
+**IoT Core Kit Examples**: [https://github.com/ARM-software/Cloud-IoT-Core-Kit-Examples](https://github.com/ARM-software/Cloud-IoT-Core-Kit-Examples)
+
+**MeArm Robot Arm Open Source Project**: [https://shop.mearm.com/](https://shop.mearm.com/) 
+
+**pigpio Python Library**: [http://abyz.me.uk/rpi/pigpio/python.html](http://abyz.me.uk/rpi/pigpio/python.html) 
 
 -----
 
@@ -232,7 +236,7 @@ Here is my code for the whole project.
 **Q: Motors are jittering?**
 
   * **Solution:** Check **Common Ground**. Make sure you ran `sudo pigpiod`.
-  * **Solution:** **Change Battery**. 
+  * **Solution:** Change Battery. 
   *  **Solution:** Check servo motor.
 
 **Q: Web page stuck?**
